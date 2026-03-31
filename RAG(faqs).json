@@ -1,0 +1,674 @@
+{
+  "name": "RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1yFnunHqI7iwg3eGE9UnyzI7OjpD-0rEC",
+          "mode": "list",
+          "cachedResultName": "DrivingInstructorFaq.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1yFnunHqI7iwg3eGE9UnyzI7OjpD-0rEC/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -800,
+        -96
+      ],
+      "id": "67f478ea-eb9d-4a59-9ed5-01f2b13c84f9",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aGQHnQyqu3ENN6wQ",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "=data",
+        "options": {
+          "keepSource": "binary"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -656,
+        -96
+      ],
+      "id": "d27e1492-7198-446a-970e-2b6d348bccc7",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "faqs",
+          "mode": "list",
+          "cachedResultName": "faqs"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -496,
+        -96
+      ],
+      "id": "359d916b-1f4f-4c86-8a08-a11ad1a2e5b7",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "kXvdQC47sb6mcuQL",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        176
+      ],
+      "id": "2c60c4db-655e-4b02-9e0c-2dfb8bd15920",
+      "name": "Embeddings HuggingFace Inference",
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "OkHDaagmN1qLK8QI",
+          "name": "HuggingFaceApi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -528,
+        176
+      ],
+      "id": "6596c7e3-931d-4940-a292-97302cb9f58f",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        320
+      ],
+      "id": "f98ff90e-fe91-4fd7-abfa-73aa739d029c",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        -112
+      ],
+      "id": "d4d73ea6-a488-490f-877c-35e12a7dcee9",
+      "name": "When chat message received",
+      "webhookId": "b78a7f17-a07b-456f-91f6-84006860121e"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful driving instructor assistant. Use the vector store tool to search our FAQ database.\n\nIMPORTANT RULES:\n- Only answer based on retrieved information.\n- If relevant information is found, respond clearly and briefly using the FAQ content only.\n\n- If NO relevant information is found, respond EXACTLY with:\n\"I don't have that information in our FAQ.\nWould you like our support team to help you? Please provide your email address, or you can ask another question.\"\n\n- If the user provides a valid email address, DO NOT search the FAQ.\n- Respond EXACTLY with:\n\"Thanks! Our support team will review your question and respond by email within 2–3 business days.\"\n\n- If the user asks another question instead of providing an email, continue normally and search the FAQ again.\n- After sending the final email confirmation message, end the conversation.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        176,
+        -112
+      ],
+      "id": "daf33a57-ae6c-4b5a-b254-c4831e35e70e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        128
+      ],
+      "id": "af5a317e-963e-456e-970e-8ef1d0be2b9d",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "l4u4pN1IAoQXvClQ",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        144
+      ],
+      "id": "9fe98946-2f6d-4f4e-a44d-aba7e58bfe6c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        224,
+        272
+      ],
+      "id": "561a8063-c96d-410e-a07b-76a56e611a3c",
+      "name": "Embeddings HuggingFace Inference1",
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "OkHDaagmN1qLK8QI",
+          "name": "HuggingFaceApi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the driving instructor FAQ database for relevant information. Use this to find answers to user questions about driving lessons, tests, and policies.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "faqs",
+          "mode": "list",
+          "cachedResultName": "faqs"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        128
+      ],
+      "id": "ba5c6a6b-b3af-4e67-b2e0-0e9bec29df39",
+      "name": "Pinecone Vector Store1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "kXvdQC47sb6mcuQL",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dc10385b-7bcc-49f7-a22b-33f04f140ff1",
+              "leftValue": "= {{ $('AI Agent').item.json.output }}",
+              "rightValue": "don't have",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "e85bada7-2309-4410-87c0-a657abe16554",
+              "leftValue": "{{ $('AI Agent').item.json.output }}",
+              "rightValue": "I don't know",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "9586aabb-4e22-4d27-a1b5-10bf6fa16605",
+              "leftValue": "={{ $('AI Agent').item.json.output }}",
+              "rightValue": "=cannot find",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "1abea18b-369a-4aaa-8996-23108b43630e",
+              "leftValue": "={{ $('AI Agent').item.json.output }}",
+              "rightValue": "no information",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        528,
+        -112
+      ],
+      "id": "b3403aa0-14b4-44a4-8271-cf349c5e8126",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "message": "=I don't have that information in our FAQ.\nWould you like our support team to help you? You can provide your email address, or feel free to ask another question.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -128
+      ],
+      "id": "6a771bd4-8297-42d8-93ba-cdb60e522a5e",
+      "name": "Respond to Chat"
+    },
+    {
+      "parameters": {
+        "message": "={{ $('AI Agent').item.json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        720,
+        208
+      ],
+      "id": "a05921a4-2c95-4735-ad47-3a425bcf1861",
+      "name": "Respond to Chat1",
+      "notesInFlow": false,
+      "retryOnFail": false,
+      "executeOnce": false,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "sendTo": "uk435786@gmail.com",
+        "subject": "=New Support Request - {{ $now.format('DD HH:mm') }}",
+        "message": "=<p><strong>New support request from chatbot:</strong></p>\n\n<p><strong>User Email:</strong> {{ $input.first().json.chatInput }}</p>\n\n<p><strong>Question:</strong> {{ $('When chat message received').first().json.chatInput }}</p>\n\n<p><strong>Timestamp:</strong> {{ $now.format('DD HH:mm:ss') }}</p>\n\n<p>Please follow up with the user at the email address provided above.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        -288
+      ],
+      "id": "0a2cd4e1-3eec-4131-8927-f1377fa022bf",
+      "name": "Send a message",
+      "webhookId": "467e463b-99cc-4f7c-8dac-b4ab31c50bd4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1f0lLCKYBu8tFqCO",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dd5c43ce-148f-4bd5-a9df-3d3b712193f0",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1184,
+        -144
+      ],
+      "id": "841dda15-d28b-4e85-a8d8-b31e346bbdfc",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "message": "That doesn’t look like a valid email address.\nPlease enter a valid email so our support team can help you.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        -128
+      ],
+      "id": "4e092347-4082-4eda-8fd2-4b24d2947dd7",
+      "name": "Respond to Chat3"
+    },
+    {
+      "parameters": {
+        "message": "=Thanks! Our support team will review your question and respond by email within 2–3 business days.",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        -288
+      ],
+      "id": "39adba17-f3ee-4d18-be6b-8531c8263c7b",
+      "name": "Respond to Chat2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4af0e51c-32ab-4582-8a72-a613cb441c70",
+              "leftValue": "={{ $json.chatInput }}\n",
+              "rightValue": "@",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        -128
+      ],
+      "id": "2982d3a0-5494-4ef6-8c93-54e0f3fabdb3",
+      "name": "If2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "main": [
+        []
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Chat1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Chat": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Chat1": {
+      "main": [
+        []
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Chat3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Chat3": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "019546c7-dd39-4e77-8941-2efcad7d611d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "990e50512439d7cac3fcf1fb8b0e24adb0707bbbc525c0343d2fc24bbc26f198"
+  },
+  "id": "3IBhBv6cvvBGZ6lP",
+  "tags": []
+}
